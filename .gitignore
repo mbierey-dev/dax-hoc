@@ -1,0 +1,13 @@
+data/
+*.db
+*.db-wal
+*.db-shm
+.env
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+birth.md
