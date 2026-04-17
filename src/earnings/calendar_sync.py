@@ -38,7 +38,7 @@ def sync_all(engine) -> list[EarningsEvent]:
     records = []
 
     for company in companies:
-        result = fetch(company.isin)
+        result = fetch(company.isin, ticker=company.ticker)
         if result is None:
             continue
         if not (today <= result.announcement_date <= cutoff):
@@ -52,12 +52,8 @@ def sync_all(engine) -> list[EarningsEvent]:
                 "fiscal_period": fiscal_period,
                 "event_type": "quarterly",  # refined later as we build history
                 "expected_date": result.announcement_date,
-                "expected_time_local": None,
-                "time_confidence": "exact",
                 "source": "yahoo_finance",
                 "status": "scheduled",
-                "actual_release_at": None,
-                "news_item_id": None,
                 "last_synced_at": now,
             }
         )
@@ -77,7 +73,6 @@ def sync_all(engine) -> list[EarningsEvent]:
             index_elements=["isin", "fiscal_period"],
             set_={
                 "expected_date": stmt.excluded.expected_date,
-                "time_confidence": stmt.excluded.time_confidence,
                 "source": stmt.excluded.source,
                 "last_synced_at": stmt.excluded.last_synced_at,
             },

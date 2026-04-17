@@ -11,14 +11,17 @@ class ClaudeProvider(LLMProvider):
 
     def complete(self, model: str, prompt: str, web_search: bool = False) -> LLMResponse:
         start = time.monotonic()
+        is_opus = model.startswith("claude-opus")
         kwargs: dict = {
             "model": model,
-            "max_tokens": 4096,
+            "max_tokens": 16_000 if is_opus else 4096,
             "messages": [{"role": "user", "content": prompt}],
         }
-        if web_search:
+        if is_opus:
+            kwargs["thinking"] = {"type": "adaptive"}
+        if web_search or is_opus:
             kwargs["tools"] = [
-                {"type": "web_search_20250305", "name": "web_search", "max_uses": 5}
+                {"type": "web_search_20260209", "name": "web_search", "max_uses": 5}
             ]
 
         response = self._client.messages.create(**kwargs)

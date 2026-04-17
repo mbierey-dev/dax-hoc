@@ -27,12 +27,21 @@ class EarningsDate:
     confirmed: bool  # True = single date; False = range estimate
 
 
-def fetch(isin: str) -> EarningsDate | None:
-    """Return the next confirmed earnings date for an ISIN, or None."""
-    try:
-        cal = yf.Ticker(isin).calendar
-    except Exception as e:
-        logger.warning("yfinance error for %s: %s", isin, e)
+def fetch(isin: str, ticker: str | None = None) -> EarningsDate | None:
+    """Return the next confirmed earnings date for an ISIN, or None.
+
+    If a ticker override is provided it is tried first; falls back to the ISIN.
+    """
+    symbols = [s for s in [ticker, isin] if s]
+    for symbol in symbols:
+        try:
+            cal = yf.Ticker(symbol).calendar
+            if cal and "Earnings Date" in cal:
+                break
+        except Exception as e:
+            logger.warning("yfinance error for %s: %s", symbol, e)
+            cal = None
+    else:
         return None
 
     if not cal or "Earnings Date" not in cal:

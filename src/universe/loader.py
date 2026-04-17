@@ -21,15 +21,16 @@ def _read_universe() -> list[dict]:
         reader = csv.reader(f)
         next(reader)  # skip header
         for row in reader:
-            if len(row) < 4:
+            if len(row) < 5:
                 continue
             rows.append(
                 {
                     "company_name": row[0].strip(),
                     "ISIN": row[1].strip(),
-                    "index": row[2].strip(),
-                    "industry": row[3].strip(),
-                    "description": ",".join(row[4:]).strip() if len(row) > 4 else None,
+                    "ticker": row[2].strip() or None,
+                    "index": row[3].strip(),
+                    "industry": row[4].strip(),
+                    "description": ",".join(row[5:]).strip() if len(row) > 5 else None,
                 }
             )
     return rows
@@ -44,6 +45,7 @@ def sync_companies(engine) -> int:
         {
             "isin": row["ISIN"],
             "name": row["company_name"],
+            "ticker": row["ticker"],
             "index_name": row["index"],
             "industry": row["industry"],
             "description": row["description"],
@@ -59,6 +61,7 @@ def sync_companies(engine) -> int:
             index_elements=["isin"],
             set_={
                 "name": stmt.excluded.name,
+                "ticker": stmt.excluded.ticker,
                 "index_name": stmt.excluded.index_name,
                 "industry": stmt.excluded.industry,
                 "description": stmt.excluded.description,

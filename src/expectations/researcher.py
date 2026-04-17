@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from db import get_session
 from db.models import Company, EarningsEvent, ExpectationsSnapshot
+from expectations import pre_ann_prices
 from llm.registry import call_llm
 
 logger = logging.getLogger(__name__)
@@ -61,16 +62,27 @@ def research(event: EarningsEvent, company: Company, engine) -> ExpectationsSnap
     )
 
     narrative_md, trade_thesis_md, sources = _parse_sections(content)
+    gathered_at = datetime.now(timezone.utc)
+
+    prices = pre_ann_prices.fetch(company, gathered_at.date())
 
     snapshot = ExpectationsSnapshot(
         id=str(uuid.uuid4()),
         earnings_event_id=event.id,
-        gathered_at=datetime.now(timezone.utc),
+        gathered_at=gathered_at,
         narrative_md=narrative_md,
         trade_thesis_md=trade_thesis_md,
         sources_json=json.dumps(sources),
         raw_research_text=content,
         llm_run_id=run_id,
+        pre_ann_ticker=prices.ticker if prices else None,
+        pre_ann_return_1d=prices.return_1d if prices else None,
+        pre_ann_return_3d=prices.return_3d if prices else None,
+        pre_ann_return_7d=prices.return_7d if prices else None,
+        pre_ann_abnormal_return_1d=prices.abnormal_return_1d if prices else None,
+        pre_ann_abnormal_return_3d=prices.abnormal_return_3d if prices else None,
+        pre_ann_abnormal_return_7d=prices.abnormal_return_7d if prices else None,
+        pre_ann_fetched_at=gathered_at if prices else None,
     )
     session = get_session(engine)
     try:
